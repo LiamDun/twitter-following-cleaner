@@ -13,6 +13,11 @@
       "128": "icon128.png"
     }
   },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "following-cleaner@example.com"
+    }
+  },
   "icons": {
     "16": "icon16.png",
     "48": "icon48.png",
