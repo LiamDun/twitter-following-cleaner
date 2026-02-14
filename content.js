@@ -192,7 +192,7 @@
 
     // Header
     const header = el("div", { className: "fc-header" }, [
-      el("h1", { innerHTML: "Following Cleaner", className: "fc-title" }),
+      el("h1", { textContent: "Following Cleaner", className: "fc-title" }),
       el("p", {
         textContent: done ? "All done!" : `${currentIndex + 1} of ${displayOrder.length}`,
         className: "fc-subtitle",
@@ -312,24 +312,24 @@
       // Action buttons
       const actions = el("div", { className: "fc-actions" }, [
         el("button", {
-          innerHTML: "✕",
+          textContent: "✕",
           className: "fc-btn-unfollow",
           onclick: () => doSwipe("left"),
         }),
         el("button", {
-          innerHTML: "↩",
+          textContent: "↩",
           className: "fc-btn-undo",
           onclick: () => undoSwipe(),
           title: "Undo last swipe",
         }),
         el("button", {
-          innerHTML: "☰",
+          textContent: "☰",
           className: "fc-btn-menu",
           onclick: () => showResults(),
           title: "View results so far",
         }),
         el("button", {
-          innerHTML: "♥",
+          textContent: "♥",
           className: "fc-btn-keep",
           onclick: () => doSwipe("right"),
         }),
@@ -378,7 +378,7 @@
     const container = el("div", { className: "fc-container" });
 
     function renderResults() {
-      container.innerHTML = "";
+      container.replaceChildren();
 
       // Header
       container.appendChild(el("div", { className: "fc-results-header" }, [
@@ -739,7 +739,6 @@
     const e = document.createElement(tag);
     for (const [k, v] of Object.entries(props)) {
       if (k === "className") e.className = v;
-      else if (k === "innerHTML") e.innerHTML = v;
       else if (k === "textContent") e.textContent = v;
       else if (k === "style" && typeof v === "string") e.setAttribute("style", v);
       else if (k.startsWith("on")) e[k] = v;

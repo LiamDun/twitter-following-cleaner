@@ -14,7 +14,10 @@
   },
   "browser_specific_settings": {
     "gecko": {
-      "id": "following-cleaner@example.com"
+      "id": "following-cleaner@example.com",
+      "data_collection_permissions": {
+        "required": false
+      }
     }
   },
   "icons": {
