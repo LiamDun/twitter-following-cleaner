@@ -2,11 +2,15 @@
  * Following Cleaner for X
  * Tinder-style swipe UI to clean up your X/Twitter following list.
  *
- * This content script runs on x.com/*/following pages.
+ * This content script runs on X following pages.
  * It scans visible UserCell elements, presents a swipe overlay,
  * and can execute unfollows by clicking the native UI buttons.
  */
 (() => {
+  // Prevent double injection
+  if (window.__FC_INJECTED) return;
+  window.__FC_INJECTED = true;
+
   // ═══════════════════════════════════════════
   // STATE
   // ═══════════════════════════════════════════
@@ -24,14 +28,9 @@
   let phase = "idle"; // "idle" | "scanning" | "swiping" | "results" | "unfollowing"
 
   // ═══════════════════════════════════════════
-  // LISTEN FOR POPUP
+  // AUTO-START ON INJECTION
   // ═══════════════════════════════════════════
-  chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
-    if (msg.action === "startScan") {
-      sendResponse({ started: true });
-      startScanning();
-    }
-  });
+  startScanning();
 
   // ═══════════════════════════════════════════
   // SCANNING
@@ -40,100 +39,115 @@
     if (phase === "scanning") return;
     phase = "scanning";
 
-    // Show scanning overlay
-    showScanningOverlay();
+    try {
+      // Show scanning overlay
+      showScanningOverlay();
 
-    const accounts = new Map();
-    let lastCount = 0;
-    let noNewCount = 0;
+      // Find X's actual scrollable container
+      const scrollContainer = findScrollContainer();
 
-    // Scroll to top first
-    window.scrollTo(0, 0);
-    await sleep(500);
+      const accounts = new Map();
+      let lastCount = 0;
+      let noNewCount = 0;
 
-    while (noNewCount < 6) {
-      const cells = document.querySelectorAll('[data-testid="UserCell"]');
-      cells.forEach(cell => {
-        try {
-          let handle = "";
-          const links = cell.querySelectorAll('a[role="link"]');
-          for (const link of links) {
-            const href = link.getAttribute("href");
-            if (href && href.match(/^\/[A-Za-z0-9_]+$/) && !href.includes("/status/")) {
-              handle = href.replace("/", "@");
-              break; // First match is the profile link, not bio mentions
+      // Scroll to top first
+      scrollContainer.scrollTop = 0;
+      await sleep(500);
+
+      while (noNewCount < 6) {
+        const cells = document.querySelectorAll('[data-testid="UserCell"]');
+        cells.forEach(cell => {
+          try {
+            let handle = "";
+            const links = cell.querySelectorAll('a[role="link"]');
+            for (const link of links) {
+              const href = link.getAttribute("href");
+              if (href && href.match(/^\/[A-Za-z0-9_]+$/) && !href.includes("/status/")) {
+                handle = href.replace("/", "@");
+                break;
+              }
             }
-          }
 
-          if (!handle || accounts.has(handle)) return;
+            if (!handle || accounts.has(handle)) return;
 
-          // Display name
-          const nameSpans = cell.querySelectorAll('a[role="link"] span');
-          let displayName = nameSpans.length > 0 ? nameSpans[0].textContent : handle;
+            const nameSpans = cell.querySelectorAll('a[role="link"] span');
+            let displayName = nameSpans.length > 0 ? nameSpans[0].textContent : handle;
 
-          // Bio - find text that isn't the name or handle or button text
-          let bio = "";
-          const allDirs = cell.querySelectorAll('[dir="auto"]');
-          allDirs.forEach(d => {
-            const text = d.textContent.trim();
-            if (!text) return;
-            // Skip if inside a button, role=button, or a follow-related test element
-            if (d.closest('button') || d.closest('[role="button"]')) return;
-            const testEl = d.closest('[data-testid]');
-            if (testEl && /follow/i.test(testEl.getAttribute('data-testid'))) return;
-            // Skip the display name and handle
-            if (text === displayName) return;
-            if (/^@[A-Za-z0-9_]+$/.test(text)) return; // standalone handle
-            // Skip any text that looks like button UI text
-            if (/^(Click to (Un)?follow|Following$)/i.test(text)) return;
-            if (/^Click to/.test(text)) return;
-            // Skip parent elements whose text includes child text we'd skip
-            // (e.g. a parent that contains both bio and name gets name's full text)
-            // Prefer leaf-level or near-leaf elements
-            const childDirs = d.querySelectorAll('[dir="auto"]');
-            if (childDirs.length > 2) return; // too high up the tree, skip
-            // Bio is usually the longest remaining text
-            if (text.length > bio.length) {
-              bio = text;
-            }
-          });
+            let bio = "";
+            const allDirs = cell.querySelectorAll('[dir="auto"]');
+            allDirs.forEach(d => {
+              const text = d.textContent.trim();
+              if (!text) return;
+              if (d.closest('button') || d.closest('[role="button"]')) return;
+              const testEl = d.closest('[data-testid]');
+              if (testEl && /follow/i.test(testEl.getAttribute('data-testid'))) return;
+              if (text === displayName) return;
+              if (/^@[A-Za-z0-9_]+$/.test(text)) return;
+              if (/^(Click to (Un)?follow|Following$)/i.test(text)) return;
+              if (/^Click to/.test(text)) return;
+              const childDirs = d.querySelectorAll('[dir="auto"]');
+              if (childDirs.length > 2) return;
+              if (text.length > bio.length) {
+                bio = text;
+              }
+            });
 
-          // Avatar
-          const img = cell.querySelector('img[src*="profile_images"]');
-          const avatar = img ? img.src : "";
+            const img = cell.querySelector('img[src*="profile_images"]');
+            const avatar = img ? img.src : "";
 
-          accounts.set(handle, { displayName, handle, bio, avatar });
-        } catch (e) {}
-      });
+            accounts.set(handle, { displayName, handle, bio, avatar });
+          } catch (e) {}
+        });
 
-      // Update scanning overlay
-      updateScanCount(accounts.size);
+        updateScanCount(accounts.size);
 
-      if (accounts.size === lastCount) {
-        noNewCount++;
-      } else {
-        noNewCount = 0;
-        lastCount = accounts.size;
+        if (accounts.size === lastCount) {
+          noNewCount++;
+        } else {
+          noNewCount = 0;
+          lastCount = accounts.size;
+        }
+
+        scrollContainer.scrollBy(0, 2000);
+        await sleep(150);
       }
 
-      window.scrollBy(0, 2000);
-      await sleep(150);
+      allAccounts = Array.from(accounts.values());
+      allAccounts.reverse();
+      displayOrder = shuffle([...allAccounts]);
+
+      scrollContainer.scrollTop = 0;
+      await sleep(300);
+
+      phase = "swiping";
+      currentIndex = 0;
+      kept = [];
+      unfollowed = [];
+      showSwipeOverlay();
+    } catch (err) {
+      console.error("[Following Cleaner] Scan error:", err);
+      removeOverlay();
+      phase = "idle";
+      alert("Following Cleaner error: " + err.message);
     }
+  }
 
-    allAccounts = Array.from(accounts.values());
-    // Reverse so oldest first (X shows newest first)
-    allAccounts.reverse();
-    displayOrder = shuffle([...allAccounts]);
-
-    // Scroll back to top
-    window.scrollTo(0, 0);
-    await sleep(300);
-
-    phase = "swiping";
-    currentIndex = 0;
-    kept = [];
-    unfollowed = [];
-    showSwipeOverlay();
+  function findScrollContainer() {
+    // X uses a scrollable div, not window scroll. Find it.
+    // Strategy: walk up from the first UserCell to find the scrollable ancestor
+    const cell = document.querySelector('[data-testid="UserCell"]');
+    if (cell) {
+      let el = cell.parentElement;
+      while (el && el !== document.body) {
+        const style = window.getComputedStyle(el);
+        if ((style.overflowY === "auto" || style.overflowY === "scroll") && el.scrollHeight > el.clientHeight) {
+          return el;
+        }
+        el = el.parentElement;
+      }
+    }
+    // Fallback to documentElement
+    return document.scrollingElement || document.documentElement;
   }
 
   // ═══════════════════════════════════════════
@@ -530,8 +544,8 @@
 
   async function unfollowOne(account) {
     try {
-      // Scroll through the following list to find this person's cell
-      window.scrollTo(0, 0);
+      const sc = findScrollContainer();
+      sc.scrollTop = 0;
       await sleep(300);
 
       for (let attempt = 0; attempt < 80; attempt++) {
@@ -548,13 +562,11 @@
           }
 
           if (cellHandle.toLowerCase() === account.handle.toLowerCase()) {
-            // Found the cell, look for the Following button
             const btn = cell.querySelector('[data-testid$="-unfollow"]');
             if (btn) {
               btn.click();
               await sleep(500);
 
-              // Confirm unfollow in the dialog
               const confirmBtn = document.querySelector('[data-testid="confirmationSheetConfirm"]');
               if (confirmBtn) {
                 confirmBtn.click();
@@ -566,7 +578,7 @@
           }
         }
 
-        window.scrollBy(0, 400);
+        sc.scrollBy(0, 400);
         await sleep(200);
       }
 

@@ -318,7 +318,7 @@
   margin-top: 24px;
 }
 
-.fc-btn-unfollow, .fc-btn-keep, .fc-btn-menu {
+.fc-btn-unfollow, .fc-btn-keep, .fc-btn-menu, .fc-btn-undo {
   border-radius: 50%;
   border: 2px solid;
   cursor: pointer;
@@ -373,6 +373,7 @@
 .fc-btn-undo {
   width: 48px;
   height: 48px;
+  border-radius: 50%;
   border-color: #f59e0b;
   background: rgba(245, 158, 11, 0.1);
   color: #f59e0b;

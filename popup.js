@@ -21,20 +21,24 @@ document.getElementById("startBtn").addEventListener("click", async () => {
   btn.classList.add("btn-disabled");
   btn.disabled = true;
 
-  status.textContent = "📡 Scrolling through your following list...";
-  status.classList.add("visible");
+  try {
+    await chrome.scripting.insertCSS({
+      target: { tabId: tab.id },
+      files: ["styles.css"],
+    });
+    await chrome.scripting.executeScript({
+      target: { tabId: tab.id },
+      files: ["content.js"],
+    });
 
-  chrome.tabs.sendMessage(tab.id, { action: "startScan" }, (response) => {
-    if (chrome.runtime.lastError) {
-      status.textContent = "⚠️ Couldn't connect. Try refreshing the page.";
-      btn.textContent = "Start Scanning";
-      btn.classList.add("btn-primary");
-      btn.classList.remove("btn-disabled");
-      btn.disabled = false;
-      return;
-    }
-    if (response && response.started) {
-      status.textContent = "✅ Scanning started! You can close this popup.";
-    }
-  });
+    status.textContent = "✅ Scanning started! You can close this popup.";
+    status.classList.add("visible");
+  } catch (err) {
+    status.textContent = "⚠️ Failed: " + err.message;
+    status.classList.add("visible");
+    btn.textContent = "Start Scanning";
+    btn.classList.add("btn-primary");
+    btn.classList.remove("btn-disabled");
+    btn.disabled = false;
+  }
 });
