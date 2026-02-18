@@ -1,17 +1,14 @@
-# Following Cleaner for X
+<p align="center"><img width="128" height="128" src="https://i.imgur.com/u3eUnqd.png"></p>
+<h1 align="center">Following Cleaner for Twitter</h1>
 
-A Chrome extension that gives you a Tinder-style swipe interface to clean up your X/Twitter following list. Swipe right to keep, swipe left to unfollow.
-
-![Chrome Extension](https://img.shields.io/badge/Chrome-Extension-blue?logo=googlechrome&logoColor=white)
-![Manifest V3](https://img.shields.io/badge/Manifest-V3-green)
-![License: MIT](https://img.shields.io/badge/License-MIT-yellow)
-
-<!-- 
-Add screenshots here after installing:
-![Scanning](screenshots/scanning.png)
-![Swipe UI](screenshots/swipe.png)
-![Results](screenshots/results.png)
--->
+<p align="center">
+  </br></br>
+  <a href="https://addons.mozilla.org/en-GB/firefox/addon/twitter-following-cleaner">
+    <picture>
+      <source srcset="https://i.imgur.com/ZluoP7T.png" media="(prefers-color-scheme: dark)">
+      <img height="58" src="https://i.imgur.com/4PobQqE.png" alt="Firefox add-ons"></picture></a>
+  </br></br>
+</p>
 
 ## Features
 
@@ -24,6 +21,10 @@ Add screenshots here after installing:
 - **Batch unfollow execution** — once you've made your choices, execute unfollows with built-in throttling (3–7s random delays)
 - **Cancel anytime** — stop the unfollow process mid-way if you change your mind
 - **Move between lists** — change your mind in the results view by moving accounts between keep/unfollow
+
+## Screenshots
+
+<img width="566" height="846" alt="Following Cleaner for Twitter" src="https://github.com/user-attachments/assets/dd86e654-ea0a-4cd9-bd90-848a5b7e977b" />
 
 ## Privacy
 
